@@ -8,6 +8,7 @@ from jenkspy import jenks_breaks
 from folium.plugins import MarkerCluster
 import leafmap.foliumap as leafmap
 import altair as alt
+from PIL import Image, ImageDraw
 from PIL import Image
 import os
 import tempfile
@@ -23,11 +24,18 @@ from streamlit_option_menu import option_menu
 import rasterio as rio
 from rasterio.windows import Window
 from rasterio.enums import Resampling
-from streamlit_folium import folium_static
 from pyproj import Transformer
 from rasterio.windows import Window
 import requests
 from io import BytesIO
+import io
+import os
+import rasterio as rio
+from pyproj import Transformer
+from branca.colormap import LinearColormap
+from PIL import Image, ImageDraw
+import imageio
+
 
 
 with st.sidebar:
@@ -119,24 +127,30 @@ if selected == "Home":
     st.markdown("<p class='summary'>Découvrez les fonctionnalités de notre dashboard et profitez de l'exploration de données spatiales.</p>", unsafe_allow_html=True)
 
 
-
 if selected == "Contact":
     # Informations sur les membres du groupe
-    membre1 = {"nom": "Nom 1", "photo": "C://Users//hp/Downloads//Compressed//streamlit-multipage-template-master//fati.jpeg", "info": "Informations sur le Membre 1"}
-    membre2 = {"nom": "Nom 2", "photo": "C://Users//hp/Downloads//Compressed//streamlit-multipage-template-master//fatiha.jpeg", "info": "Informations sur le Membre 2"}
-
-
-
-
+    membre1 = {"nom": "FATIMA-EZZAHRAE EL BOUBEKRI", "photo": "https://fatielkadd.github.io/app_streamlit/WhatsApp_Image_2023-12-04_at_19.32.29-removebg-preview.png", "info": "FATIMA-EZZAHRAE EL BOUBEKRI Étudiante en 3ème année, cycle d'ingénieur en science géomatique"}
+    membre2 = {"nom": "FATIHA EL KADDOURI", "photo": "https://fatielkadd.github.io/app_streamlit/fatiha.png", "info": " FATIHA EL KADDOURI Étudiante en 3ème année, cycle d'ingénieur en science géomatique"}
 
     # Présentation des membres du groupe
     st.markdown("<div class='container'>", unsafe_allow_html=True)
 
-    st.image(Image.open(membre1["photo"]), caption=f"{membre1['nom']} - Membre 1", use_column_width=True, width=100)
-    st.markdown(f"<div class='membre-info'>{membre1['info']}</div>", unsafe_allow_html=True)
+    # Utilisation du HTML pour créer une structure de grille
+    st.markdown(
+        f"<div style='display: flex; justify-content: space-around;'>"
+        f"<div style='flex: 1; margin-right: 20px;'>"
+        f"<img src='{membre1['photo']}' alt='{membre1['nom']}' style='width: 100%;'>"
+        f"<div class='membre-info'>{membre1['info']}</div>"
+        f"</div>"
+        f"<div style='flex: 1;'>"
+        f"<img src='{membre2['photo']}' alt='{membre2['nom']}' style='width: 100%;'>"
+        f"<div class='membre-info'>{membre2['info']}</div>"
+        f"</div>"
+        f"</div>",
+        unsafe_allow_html=True
+    )
 
-    st.image(Image.open(membre2["photo"]), caption=f"{membre2['nom']} - Membre 2", use_column_width=True, width=100)
-    st.markdown(f"<div class='membre-info'>{membre2['info']}</div>", unsafe_allow_html=True)
+
 
     
 if selected == "Classified Map":
@@ -147,7 +161,7 @@ if selected == "Classified Map":
     
 
 
-    url_to_geoparquet = "https://fatielkadd.github.io/app_streamlit/dataset_geoparquet_maroc.geoparquet"
+    url_to_geoparquet = "https://fatielkadd.github.io/geoparquet/dataset_geoparquet_maroc.geoparquet"
     # Download the Parquet file
     response = requests.get(url_to_geoparquet)
     parquet_content = BytesIO(response.content)
@@ -234,7 +248,7 @@ if selected == "Classified Map":
 
     else:
         # List of properties for selection
-        proprietes = ['densité', 'croissance de la population']
+        proprietes = ['densité', 'taux de croissance de la population']
         selected_property = st.sidebar.selectbox("Sélectionner une propriété", proprietes)
 
         # Classify values using the Jenks method
@@ -287,7 +301,7 @@ elif selected == "Requetes ":
     if selected1=="requétes attributaire":
         st.subheader("Sous-objectif 1 : Filtrage attributaire")
         # Load geospatial data from GeoParquet file
-        url_to_geoparquet = "https://fatielkadd.github.io/app_streamlit/dataset_geoparquet_maroc.geoparquet"
+        url_to_geoparquet = "https://fatielkadd.github.io/geoparquet/dataset_geoparquet_maroc.geoparquet"
         # Download the Parquet file
         response = requests.get(url_to_geoparquet)
         parquet_content = BytesIO(response.content)
@@ -354,7 +368,7 @@ elif selected == "Requetes ":
     if selected1=="requétes spatiales ":
         st.subheader("Sous-objectif 1 : Filtrage spatial")
 
-        url_to_geoparquet = "https://fatielkadd.github.io/app_streamlit/dataset_geoparquet_maroc.geoparquet"
+        url_to_geoparquet = "https://fatielkadd.github.io/geoparquet/dataset_geoparquet_maroc.geoparquet"
         # Download the Parquet file
         response = requests.get(url_to_geoparquet)
         parquet_content = BytesIO(response.content)
@@ -382,13 +396,6 @@ elif selected == "Requetes ":
             st.write("Nombre d'entités dans le fichier Shapefile chargé :", len(uploaded_gdf))
             st.write("Geometrie du fichier Shapefile chargé :", uploaded_gdf.geometry)
                     
-
-                
-
-            # Read the file from the temporary location
-        
-            
-
             # Bouton pour choisir si les points doivent être à l'intérieur ou à l'extérieur de la zone définie
             spatial_filter_choice = st.radio("Choisissez le filtre spatial :", ["À l'intérieur", "À l'extérieur"])
 
@@ -450,7 +457,7 @@ elif selected=="SplitMap":
 elif selected=="Map":
     st.title("visualisation des données ")
    # Load geospatial data from GeoParquet file
-    url_to_geoparquet = "https://fatielkadd.github.io/app_streamlit/dataset_geoparquet_maroc.geoparquet"
+    url_to_geoparquet = "https://fatielkadd.github.io/geoparquet/dataset_geoparquet_maroc.geoparquet"
     # Download the Parquet file
     response = requests.get(url_to_geoparquet)
     parquet_content = BytesIO(response.content)
@@ -585,87 +592,99 @@ elif selected=="slider":
     colormap.add_to(map)
 
     folium_static(map)
-elif selected=="timeseries":
+elif selected == "timeseries":
 
-    markdown = """
-    Temp Jour 0 Tif Image in The Left 👈
-    Elevation Jour 0 Tif Image in The Right 👉
-    """
+    # Dossier de sortie pour les timelapses
+    output_folder = "timeseries"
+    os.makedirs(output_folder, exist_ok=True)
 
-    st.sidebar.title("About")
-    st.sidebar.info(markdown)
-    logo = "https://i.imgur.com/UbOXYAU.png"
-    st.sidebar.image(logo)
+    st.markdown("<h2 style='font-size:32px; text-align:center;'>Timeseries  </h2>", unsafe_allow_html=True)
 
-    st.title("timeseries")
+    attributs = ['temperature_jour', 'elevation_jour', 'humidity_jour']
+    selected_attribute = st.selectbox("Sélectionner un attribut", attributs)
 
+    def create_timelapse(attribute, DAY_names, duration, gif_size=(256, 240)):
+        images = []
+        for i in range(1, 7):
+            url = f"https://fatielkadd.github.io/imagesraster/raster/{attribute}{i}.tif"
+            response = requests.get(url)
+            image_data = Image.open(io.BytesIO(response.content))
 
-    def get_gif_path(property_name):
-        # Dictionnaire associant chaque propriété à son chemin GIF correspondant
-        property_gifs = {
-            'timelapse_temperature': 'https://fatielkadd.github.io/gif/gif/timelapse_temperature.gif',
-            'timelapse_humidity': 'https://fatielkadd.github.io/gif/gif/timelapse_humidity.gif',
-            'timelapse_elevation': 'https://fatielkadd.github.io/gif/gif/timelapse_elevation.gif'
-        }
+            # Convertir l'image en tableau NumPy
+            image_array = np.array(image_data)
 
-        # Retourner le chemin du GIF pour la propriété spécifiée
-        return property_gifs.get(property_name, None)
+            # Créer un objet de dessin
+            draw = ImageDraw.Draw(image_data)
 
-    # Créer la carte Folium
-    m = folium.Map(location=[31.7917, -7.0926], zoom_start=6)  # Coordonnées au centre du Maroc et niveau de zoom
+            # Annoter chaque image avec les noms des jours
+            draw.text((5, 5), f'{attribute}jour {i}', fill='black', font=None)
 
-    # Sélecteur pour choisir la propriété
-    selected_property = st.selectbox("Choisissez une propriété", ['timelapse_temperature', 'timelapse_humidity', 'timelapse_elevation'])
+            # Ajouter l'image annotée à la liste
+            images.append(np.array(image_data))
 
-    # Obtenir le chemin du GIF pour la propriété choisie
-    gif_path = get_gif_path(selected_property)
+        # Générer le GIF à partir des images annotées
+        gif_filename = f'timelapse_{attribute}.gif'
+        with imageio.get_writer(gif_filename, mode='I', duration=duration, loop=0, size=gif_size) as writer:
+            for image in images:
+                writer.append_data(image)
 
-    # Si le chemin du GIF existe, ajouter l'image (GIF) à la carte
-    if gif_path:
-        bounds_morocco = [
-            [36, -17],  # Coin supérieur droit (nord-ouest)
-            [20.8, -1]     # Coin inférieur gauche (sud-est)
-        ]
+        return gif_filename
 
-        image = folium.raster_layers.ImageOverlay(
-            image=gif_path,
-            bounds=bounds_morocco,
-            opacity=0.65,
-            attr="Image from patricia_nasa",
-        )
+    # Liste des noms de jours
+    DAY_names = [f'jour{jour}' for jour in range(1, 7)]
+    duration = 350
+    maroc_coordinates = {
+        "latitude": [27.6664, 35.9225],  # Latitude du bas et du haut
+        "longitude": [-17.0205, -1.1256]  # Longitude de la gauche et de la droite
+    }
+    # Utiliser la première image pour définir les limites
+    first_image_url = f"https://fatielkadd.github.io/imagesraster/raster/{attributs[0]}1.tif"
+    first_image_data = Image.open(io.BytesIO(requests.get(first_image_url).content))
+    gif_size = (256, 240)
+    bounds = [
+        [maroc_coordinates["latitude"][0], maroc_coordinates["longitude"][0]],
+        [maroc_coordinates["latitude"][1], maroc_coordinates["longitude"][1]]
+    ]
 
-        image.add_to(m)
+    # Créer les timelapses pour chaque attribut
+    gif_filenames = {}
+    for attribute in attributs:
+        gif_filenames[attribute] = create_timelapse(attribute, DAY_names, duration)
 
-        # Ajuster la taille de la carte pour couvrir toute la zone spécifiée par les limites du Maroc
-        m.fit_bounds(bounds_morocco)
+    # Reste du code pour afficher la carte avec Folium
+    m = folium.Map(location=[28.7917, -9.6026], zoom_start=5)
 
-        # Afficher la carte avec Streamlit
-        folium_static(m)
-    else:
-        st.warning("Aucun GIF disponible pour la propriété sélectionnée.")
-elif selected == "Timelapes":
-    def get_gif_path(property_name):
-        # Dictionnaire associant chaque propriété à son chemin GIF correspondant
-        property_gifs = {
-            'timelapse_temperature': 'https://fatielkadd.github.io/gif/gif/timelapse_temperature.gif',
-            'timelapse_humidity': 'https://fatielkadd.github.io/gif/gif/timelapse_humidity.gif',
-            'timelapse_elevation': 'https://fatielkadd.github.io/gif/gif/timelapse_elevation.gif'
-        }
+    selected_gif_filename = gif_filenames[selected_attribute]
 
-        # Retourner le chemin du GIF pour la propriété spécifiée
-        return property_gifs.get(property_name, None)
+    bounds_morocco = [
+        [36, -17],  # Coin supérieur droit (nord-ouest)
+        [20.8, -1]   # Coin inférieur gauche (sud-est)
+    ]
+    gif_layer = folium.raster_layers.ImageOverlay(
+        selected_gif_filename,
+        bounds=bounds_morocco,
+        opacity=0.7,
+        name=f'GIF Layer - {selected_attribute}'
+    ).add_to(m)
 
-    # Sélecteur pour choisir la propriété
-    selected_property = st.selectbox("Choisissez une propriété", ['timelapse_temperature', 'timelapse_humidity', 'timelapse_elevation'])
+    vmin = 0
+    if selected_attribute == 'humidity_jour':
+        vmax = 50
+        legend_colors = ['#253494', '#00FF00', '#FFFF00', '#FF0000']
 
-    # Obtenir le chemin du GIF pour la propriété choisie
-    gif_path = get_gif_path(selected_property)
+    elif selected_attribute == 'elevation_jour':
+        vmax = 20
+        legend_colors = ['#253494', '#00FF00', '#FFFF00', '#FF0000']
 
-    # Si le chemin du GIF existe, afficher l'image (GIF)
-    if gif_path:
-        st.image(gif_path, caption=f"{selected_property} gif", use_column_width=True)
-    else:
-        st.warning("Aucun GIF disponible pour la propriété sélectionnée.")
+    elif selected_attribute == 'temperature_jour':
+        vmax = 100
+        legend_colors = ['#253494', '#00FF00', '#FFFF00', '#FF0000']
+
+    cmap = LinearColormap(legend_colors, vmin=vmin, vmax=vmax).to_step(10, method='log')
+    cmap.add_to(m)
+    folium.LayerControl().add_to(m)
+    folium_static(m, width=1050, height=600)
+
 elif selected == "Explore COG":
     def get_tile_coordinates(cog_path, x_coord, y_coord):
         with rio.open(cog_path) as src:
@@ -740,3 +759,27 @@ elif selected == "Explore COG":
         folium_static(m)
     else:
         st.warning("Les coordonnées spécifiées sont en dehors de la plage valide.")
+elif selected == "Timelapes":
+    def get_gif_path(property_name):
+        # Dictionnaire associant chaque propriété à son chemin GIF correspondant
+        property_gifs = {
+            'timelapse_temperature': 'https://fatielkadd.github.io/gif/gif/timelapse_temperature.gif',
+            'timelapse_humidity': 'https://fatielkadd.github.io/gif/gif/timelapse_humidity.gif',
+            'timelapse_elevation': 'https://fatielkadd.github.io/gif/gif/timelapse_elevation.gif'
+        }
+
+        # Retourner le chemin du GIF pour la propriété spécifiée
+        return property_gifs.get(property_name, None)
+
+    # Sélecteur pour choisir la propriété
+    selected_property = st.selectbox("Choisissez une propriété", ['timelapse_temperature', 'timelapse_humidity', 'timelapse_elevation'])
+
+    # Obtenir le chemin du GIF pour la propriété choisie
+    gif_path = get_gif_path(selected_property)
+
+    # Si le chemin du GIF existe, afficher l'image (GIF)
+    if gif_path:
+        st.image(gif_path, caption=f"{selected_property} gif", use_column_width=True)
+    else:
+        st.warning("Aucun GIF disponible pour la propriété sélectionnée.")
+
