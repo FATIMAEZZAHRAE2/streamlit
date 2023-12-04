@@ -16,7 +16,5 @@ numpy
 streamlit_option_menu
 pyproj
 imageio
-branca.colormap
-rasterio.windows
-io
-tempfile
+
+
